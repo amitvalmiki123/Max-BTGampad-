@@ -46,6 +46,8 @@ fun StickControl(
     modifier: Modifier = Modifier
 ) {
     var knob by remember { mutableStateOf(Offset.Zero) } // px offset from center
+    val onMoveState = androidx.compose.runtime.rememberUpdatedState(onMove)
+    val onClickState = androidx.compose.runtime.rememberUpdatedState(onClick)
 
     val touch = if (interactive) {
         Modifier.pointerInput(Unit) {
@@ -57,7 +59,7 @@ fun StickControl(
                 val len = hypot(d.x, d.y)
                 if (len > travel && len > 0f) d = d * (travel / len)
                 knob = d
-                if (travel > 0f) currentOnMove(d.x / travel, d.y / travel)
+                if (travel > 0f) onMoveState.value(d.x / travel, d.y / travel)
                 return d
             }
 
@@ -80,8 +82,8 @@ fun StickControl(
                 }
                 val wasTap = (upTime - downTime) < 250L && travel > 0f && maxDist / travel < 0.18f
                 knob = Offset.Zero
-                onMove(0f, 0f)
-                if (wasTap) onClick()
+                onMoveState.value(0f, 0f)
+                if (wasTap) onClickState.value()
             }
         }
     } else {

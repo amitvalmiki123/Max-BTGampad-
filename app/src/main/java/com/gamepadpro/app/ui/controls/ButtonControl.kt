@@ -54,8 +54,8 @@ fun ButtonControl(
 ) {
     var pressed by remember { mutableStateOf(false) }
     val haptic = LocalHapticFeedback.current
-    val currentOnPressedChange by androidx.compose.runtime.rememberUpdatedState(onPressedChange)
-    val currentVibration by androidx.compose.runtime.rememberUpdatedState(vibration)
+    val onPressedChangeState = androidx.compose.runtime.rememberUpdatedState(onPressedChange)
+    val vibrationState = androidx.compose.runtime.rememberUpdatedState(vibration)
 
     val shape = if (pill) RoundedCornerShape(percent = 50) else CircleShape
     val fill = if (pressed) {
@@ -77,11 +77,11 @@ fun ButtonControl(
             awaitEachGesture {
                 awaitFirstDown()
                 pressed = true
-                if (vibration) haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
-                onPressedChange(true)
+                if (vibrationState.value) haptic.performHapticFeedback(HapticFeedbackType.TextHandleMove)
+                onPressedChangeState.value(true)
                 waitForUpOrCancellation()
                 pressed = false
-                onPressedChange(false)
+                onPressedChangeState.value(false)
             }
         }
     } else {

@@ -44,12 +44,12 @@ fun DPadControl(
     modifier: Modifier = Modifier
 ) {
     var dirs by remember { mutableStateOf(Dirs(false, false, false, false)) }
-    val currentOnDirection by androidx.compose.runtime.rememberUpdatedState(onDirection)
+    val onDirectionState = androidx.compose.runtime.rememberUpdatedState(onDirection)
 
     fun setDirs(d: Dirs) {
         if (d != dirs) {
             dirs = d
-            currentOnDirection(d.up, d.down, d.left, d.right)
+            onDirectionState.value(d.up, d.down, d.left, d.right)
         }
     }
 
