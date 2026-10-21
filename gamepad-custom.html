@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>GamePad Pro - Customizer</title>
+<style>
+:root{--bg:#070b17;--line:#1d2c5c;--neon:#1e6bff;--cy:#49b4ff;--tx:#e8eeff;--mu:#8c9bc7;--ok:#2fd36b;color-scheme:dark}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;min-height:100%}
+body{background:var(--bg);color:var(--tx);font-family:"Segoe UI","Trebuchet MS",system-ui,sans-serif;display:flex;flex-direction:column;align-items:center;padding:env(safe-area-inset-top,0) 0 env(safe-area-inset-bottom,0)}
+.stage{position:relative;margin:12px;width:min(96vw,980px);aspect-ratio:2.05/1;border-radius:26px;overflow:hidden;background:radial-gradient(90% 80% at 50% 20%,#14275a,#0a1230 55%,#060a18);box-shadow:0 0 0 3px #2a3566,0 0 40px #1e6bff33;container-type:size;touch-action:none;user-select:none;-webkit-user-select:none}
+.stage:fullscreen{width:100vw;height:100vh;margin:0;border-radius:0;aspect-ratio:auto}
+.stage.edit{background-image:linear-gradient(#ffffff0a 1px,transparent 1px),linear-gradient(90deg,#ffffff0a 1px,transparent 1px),radial-gradient(90% 80% at 50% 20%,#14275a,#0a1230 55%,#060a18);background-size:5cqw 5cqw,5cqw 5cqw,auto}
+.c{position:absolute;transform:translate(-50%,-50%);width:calc(var(--w)*var(--s)*1cqh);height:calc(var(--h)*var(--s)*1cqh);opacity:var(--o)}
+.edit .c{outline:1px dashed #49b4ff88;outline-offset:3px;cursor:grab}
+.edit .c.sel{outline:2px solid #ffd84a}
+.btn,.pill{display:grid;place-items:center;font-weight:800;background:radial-gradient(circle at 40% 35%,#1a2552,#0a1030);border:2px solid var(--col,#3a56b8);color:var(--col,#9fb4ff);font-size:calc(var(--h)*var(--s)*.46cqh)}
+.btn{border-radius:50%}
+.pill{border-radius:calc(var(--h)*var(--s)*.4cqh);font-size:calc(var(--h)*var(--s)*.36cqh);color:var(--tx);border-color:#2b3c78;background:linear-gradient(#26335f,#141d3f)}
+.btn.on,.pill.on{background:var(--col,var(--neon));color:#fff;transform:translate(-50%,-50%) scale(.92);filter:brightness(1.2)}
+.pill.on{background:var(--neon)}
+.stick{border-radius:50%;background:radial-gradient(circle,#0a1230 55%,#141f45);box-shadow:inset 0 0 0 3px #1d2c5c,0 0 18px #1e6bff22}
+.stick .k{position:absolute;left:50%;top:50%;width:62%;height:62%;margin:-31% 0 0 -31%;border-radius:50%;border:3px solid var(--neon);background:radial-gradient(circle at 40% 35%,#222d5a,#0b1230 70%);box-shadow:0 0 14px var(--neon)}
+.dpad i{position:absolute;display:grid;place-items:center;font-style:normal;color:var(--cy);background:#18234f;border:1px solid var(--line);font-size:calc(var(--h)*var(--s)*.12cqh)}
+.dpad i.on{background:var(--neon);color:#fff}
+.dpad .u{left:34%;top:0;width:32%;height:36%;border-radius:8px 8px 0 0}.dpad .d{left:34%;bottom:0;width:32%;height:36%;border-radius:0 0 8px 8px}
+.dpad .l{left:0;top:34%;width:36%;height:32%;border-radius:8px 0 0 8px}.dpad .r{right:0;top:34%;width:36%;height:32%;border-radius:0 8px 8px 0}
+.bar{position:absolute;left:50%;top:2.5cqh;transform:translateX(-50%);display:flex;gap:6px;z-index:5}
+.bar button,.panel button{background:#111a3a;color:var(--tx);border:1px solid var(--line);border-radius:99px;padding:.7cqh 1.6cqw;font:inherit;font-size:max(11px,2.6cqh);cursor:pointer}
+.bar button.on{background:var(--neon);border-color:var(--neon)}
+.panel{position:absolute;left:50%;top:48cqh;transform:translate(-50%,-50%);width:34cqw;min-width:230px;background:#0b1330ee;border:1px solid var(--line);border-radius:14px;padding:10px 12px;z-index:5;font-size:max(11px,2.6cqh);display:none;gap:8px;flex-direction:column}
+.edit .panel.show{display:flex}
+.panel label{display:flex;align-items:center;gap:8px;justify-content:space-between;color:var(--mu)}
+.panel input[type=range]{flex:1}.panel select{background:#111a3a;color:var(--tx);border:1px solid var(--line);border-radius:6px;padding:3px 6px;font:inherit}
+.rep{position:absolute;left:50%;bottom:2cqh;transform:translateX(-50%);font:max(10px,2.4cqh)/1.3 ui-monospace,Menlo,monospace;color:var(--mu);text-align:center;white-space:nowrap}
+.rep b{color:var(--ok)}
+.note{max-width:700px;color:var(--mu);font-size:13px;line-height:1.6;padding:4px 18px 22px;text-align:center}
+</style>
+</head>
+<body>
+<div class="stage" id="st">
+  <div class="bar"><button id="bE">Edit layout</button><button id="bR">Reset</button><button id="bF">Full screen</button></div>
+  <div class="panel" id="pn"></div>
+  <div class="rep" id="rep"></div>
+</div>
+<p class="note">Edit layout dabao: control ko drag karke move karo, select karke size/opacity/mapping badlo. Play mode me X aur A ek saath dono ungliyon se dabao. Koi alag X+A combo button nahi hai (sirf multi-touch). Layout is browser me save hota hai.</p>
+<script>
+const KEY="gp-layout-v1";
+const MAPS=["A","B","X","Y","LB","RB","LT","RT","L3","R3","BACK","START","GUIDE"];
+const BIT={A:0,B:1,X:2,Y:3,LB:4,RB:5,BACK:6,START:7,GUIDE:8,L3:9,R3:10};
+const col={A:"#2bd16a",B:"#e5262b",X:"#2e7bff",Y:"#f5d000"};
+const DEF=[
+ {id:"ls",t:"stick",ax:"L",x:20,y:46,s:1,o:1},
+ {id:"rs",t:"stick",ax:"R",x:63,y:74,s:1,o:1},
+ {id:"dp",t:"dpad",x:15,y:82,s:1,o:1},
+ {id:"y",t:"btn",map:"Y",x:86,y:40,s:1,o:1},{id:"x",t:"btn",map:"X",x:77,y:58,s:1,o:1},
+ {id:"b",t:"btn",map:"B",x:95,y:58,s:1,o:1},{id:"a",t:"btn",map:"A",x:86,y:76,s:1,o:1},
+ {id:"lb",t:"pill",map:"LB",x:10,y:9,s:1,o:1},{id:"lt",t:"pill",map:"LT",x:25,y:9,s:1,o:1},
+ {id:"rb",t:"pill",map:"RB",x:90,y:9,s:1,o:1},{id:"rt",t:"pill",map:"RT",x:75,y:9,s:1,o:1},
+ {id:"bk",t:"pill",map:"BACK",x:40,y:92,s:1,o:1},{id:"sт",t:"pill",map:"START",x:60,y:92,s:1,o:1}
+];
+const SZ={stick:[36,36],dpad:[28,28],btn:[15,15],pill:[16,9]};
+const $=s=>document.querySelector(s),st=$("#st"),pn=$("#pn"),rep=$("#rep");
+let L;try{L=JSON.parse(localStorage.getItem(KEY))}catch(e){}
+if(!Array.isArray(L))L=JSON.parse(JSON.stringify(DEF));
+let edit=false,sel=null;
+const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(L))}catch(e){}};
+const down=new Set(),axes={L:[0,0],R:[0,0]},dir={UP:0,DOWN:0,LEFT:0,RIGHT:0},held={};
+function build(){
+ st.querySelectorAll(".c").forEach(e=>e.remove());
+ L.forEach(c=>{
+  const e=document.createElement("div");e.className="c "+c.t;e.dataset.id=c.id;
+  const [w,h]=SZ[c.t];e.style.setProperty("--w",w);e.style.setProperty("--h",h);
+  if(c.t==="stick")e.innerHTML='<div class="k"></div>';
+  else if(c.t==="dpad")e.innerHTML='<i class="u">&#9650;</i><i class="d">&#9660;</i><i class="l">&#9664;</i><i class="r">&#9654;</i>';
+  else{e.textContent=c.map;if(col[c.map])e.style.setProperty("--col",col[c.map])}
+  place(e,c);wire(e,c);st.appendChild(e);
+ });
+}
+function place(e,c){e.style.left=c.x+"%";e.style.top=c.y+"%";e.style.setProperty("--s",c.s);e.style.setProperty("--o",c.o);e.classList.toggle("sel",sel===c.id)}
+function wire(e,c){
+ let off=null;
+ e.addEventListener("pointerdown",ev=>{
+  ev.preventDefault();e.setPointerCapture(ev.pointerId);
+  if(edit){sel=c.id;const r=st.getBoundingClientRect();off=[ev.clientX-(r.left+c.x/100*r.width),ev.clientY-(r.top+c.y/100*r.height)];L.forEach(k=>place(st.querySelector(`[data-id="${k.id}"]`),k));panel();return}
+  held[ev.pointerId]=1;press(e,c,ev);
+ });
+ e.addEventListener("pointermove",ev=>{
+  if(!e.hasPointerCapture(ev.pointerId))return;
+  if(edit&&off){const r=st.getBoundingClientRect();
+   c.x=Math.min(97,Math.max(3,(ev.clientX-off[0]-r.left)/r.width*100));c.y=Math.min(97,Math.max(3,(ev.clientY-off[1]-r.top)/r.height*100));place(e,c);return}
+  if(!edit)move(e,c,ev);
+ });
+ const up=ev=>{if(edit){off=null;save();return}release(e,c)};
+ e.addEventListener("pointerup",up);e.addEventListener("pointercancel",up);
+}
+function press(e,c,ev){
+ if(c.t==="btn"||c.t==="pill"){down.add(c.map);e.classList.add("on")}
+ else move(e,c,ev);
+ out();
+}
+function release(e,c){
+ if(c.t==="btn"||c.t==="pill"){
+  // keep mapped name pressed if another control still holds it
+  e.classList.remove("on");down.delete(c.map);
+  L.forEach(k=>{if((k.t==="btn"||k.t==="pill")&&k.map===c.map&&k!==c&&st.querySelector(`[data-id="${k.id}"]`).classList.contains("on"))down.add(c.map)});
+ }else if(c.t==="stick"){e.firstChild.style.transform="";axes[c.ax]=[0,0]}
+ else{for(const k in dir)dir[k]=0;e.querySelectorAll("i").forEach(i=>i.classList.remove("on"))}
+ out();
+}
+function move(e,c,ev){
+ const r=e.getBoundingClientRect(),dx=ev.clientX-(r.left+r.width/2),dy=ev.clientY-(r.top+r.height/2);
+ if(c.t==="stick"){const m=r.width*.3,d=Math.hypot(dx,dy),k=d>m?m/d:1,x=dx*k,y=dy*k;
+  e.firstChild.style.transform=`translate(${x}px,${y}px)`;axes[c.ax]=[x/m,y/m];out()}
+ else if(c.t==="dpad"){const t=r.width*.14;
+  dir.LEFT=dx<-t?1:0;dir.RIGHT=dx>t?1:0;dir.UP=dy<-t?1:0;dir.DOWN=dy>t?1:0;
+  ["u","d","l","r"].forEach((k,i)=>e.querySelector("."+k).classList.toggle("on",!!dir[["UP","DOWN","LEFT","RIGHT"][i]]));out()}
+}
+function hat(){const u=dir.UP,d=dir.DOWN,l=dir.LEFT,r=dir.RIGHT;
+ if(u&&r)return 1;if(r&&d)return 3;if(d&&l)return 5;if(l&&u)return 7;if(u)return 0;if(r)return 2;if(d)return 4;if(l)return 6;return 8}
+const h2=n=>(n&255).toString(16).padStart(2,"0").toUpperCase();
+function out(){
+ let m=0;for(const k in BIT)if(down.has(k))m|=1<<BIT[k];
+ const ax=v=>Math.round(v*127),b=[m&255,m>>8,hat(),ax(axes.L[0]),ax(axes.L[1]),ax(axes.R[0]),ax(axes.R[1]),down.has("LT")?255:0,down.has("RT")?255:0];
+ const names=[...down].concat(Object.keys(dir).filter(k=>dir[k]));
+ const multi=down.has("X")&&down.has("A")?"  <b>X + A multi-touch OK</b>":"";
+ rep.innerHTML="Pressed: "+(names.join(" + ")||"none")+multi+"<br>HID report: "+b.map(h2).join(" ");
+}
+function panel(){
+ const c=L.find(k=>k.id===sel);pn.classList.toggle("show",!!c);if(!c)return;
+ const map=(c.t==="btn"||c.t==="pill")?`<label>Mapping<select id="pm">${MAPS.map(m=>`<option${m===c.map?" selected":""}>${m}</option>`).join("")}</select></label>`:c.t==="stick"?`<label>Axis<select id="pa"><option${c.ax==="L"?" selected":""}>L</option><option${c.ax==="R"?" selected":""}>R</option></select></label>`:"";
+ pn.innerHTML=`<b>${c.t==="dpad"?"D-pad (Hat)":c.t==="stick"?"Stick":"Button "+c.map}</b>${map}<label>Size<input id="ps" type="range" min=".5" max="2" step=".05" value="${c.s}"></label><label>Opacity<input id="po" type="range" min=".3" max="1" step=".05" value="${c.o}"></label><button id="pr">Reset this control</button>`;
+ const e=st.querySelector(`[data-id="${c.id}"]`),re=()=>{place(e,c);save()};
+ $("#ps").oninput=ev=>{c.s=+ev.target.value;re()};$("#po").oninput=ev=>{c.o=+ev.target.value;re()};
+ if($("#pm"))$("#pm").onchange=ev=>{c.map=ev.target.value;e.textContent=c.map;e.style.setProperty("--col",col[c.map]||"");save();panel()};
+ if($("#pa"))$("#pa").onchange=ev=>{c.ax=ev.target.value;save()};
+ $("#pr").onclick=()=>{const d=DEF.find(k=>k.id===c.id);if(d){Object.assign(c,d);build();panel();save()}};
+}
+$("#bE").onclick=()=>{edit=!edit;st.classList.toggle("edit",edit);$("#bE").classList.toggle("on",edit);$("#bE").textContent=edit?"Done":"Edit layout";if(!edit){sel=null;pn.classList.remove("show");build()}down.clear();out()};
+$("#bR").onclick=()=>{L=JSON.parse(JSON.stringify(DEF));sel=null;pn.classList.remove("show");save();build()};
+$("#bF").onclick=async()=>{try{if(document.fullscreenElement)await document.exitFullscreen();else{await st.requestFullscreen();screen.orientation.lock("landscape").catch(()=>{})}}catch(e){}};
+build();out();
+</script>
+</body>
+</html>

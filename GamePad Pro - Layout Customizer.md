@@ -1,0 +1,1 @@
+Edit layout dabao: control ko drag karke move karo, select karke size/opacity/mapping badlo. Play mode me X aur A ek saath dono ungliyon se dabao. Koi alag X+A combo button nahi hai (sirf multi-touch). Layout is browser me save hota hai.
