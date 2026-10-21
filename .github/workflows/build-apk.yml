@@ -1,0 +1,72 @@
+name: Build Debug APK
+
+on:
+  push:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - name: Run unit tests (HID report / X+A = 0x05)
+        run: |
+          chmod +x gradlew
+          set -o pipefail
+          ./gradlew :app:testDebugUnitTest --stacktrace 2>&1 | tee -a build.log
+
+      - name: Build debug APK
+        run: |
+          set -o pipefail
+          ./gradlew :app:assembleDebug --stacktrace 2>&1 | tee -a build.log
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: GamePadPro-debug-apk
+          path: app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
+
+      - name: Publish APK to GitHub Release (manual runs only)
+        if: contains(github.event.head_commit.message, '[release]')
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          cp app/build/outputs/apk/debug/app-debug.apk GamePadPro-v1.0.1.apk
+          if gh release view v1.0.1 >/dev/null 2>&1; then
+            gh release upload v1.0.1 GamePadPro-v1.0.1.apk --clobber
+          else
+            gh release create v1.0.1 GamePadPro-v1.0.1.apk \
+              --target "$GITHUB_SHA" \
+              --title "GamePad Pro v1.0.1 — Bluetooth HID Gamepad" \
+              --notes "v1.0.1 fix: 100 ms report keepalive + answers Windows GET_REPORT + debug overlay now shows how many HID reports were sent. **Important if buttons did not respond:** remove/forget the old pairing on BOTH PC and phone, then pair again with the app open. Install **GamePadPro-v1.0.1.apk** (Android 9+). Full instructions: README.md"
+          fi
+
+      - name: Report build result as commit comment
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if [ "${{ job.status }}" = "success" ]; then
+            echo "✅ GamePad Pro build SUCCESS (unit tests + debug APK) — run ${{ github.run_id }}. APK is attached as artifact 'GamePadPro-debug-apk' in the Actions run." > comment.md
+          else
+            { echo "❌ GamePad Pro build FAILED — run ${{ github.run_id }}. Error lines:";
+              echo '```';
+              grep -E "e: |error:|FAILED|FAILURE|What went wrong|Execution failed|Caused by:" build.log | tail -70 || true;
+              echo '--- tail ---';
+              tail -50 build.log || true;
+              echo '```'; } > comment.md
+          fi
+          head -c 60000 comment.md > comment-trunc.md
+          gh api "repos/${{ github.repository }}/commits/${{ github.sha }}/comments" -F body=@comment-trunc.md || true
