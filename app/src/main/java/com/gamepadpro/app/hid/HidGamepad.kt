@@ -40,6 +40,18 @@ class HidGamepad(context: Context) {
     private val _state = MutableStateFlow<ConnState>(ConnState.Idle)
     val state: StateFlow<ConnState> = _state.asStateFlow()
 
+    private val _sentReports = MutableStateFlow(0L)
+    /** Total reports successfully handed to the Bluetooth stack (diagnostics). */
+    val sentReports: StateFlow<Long> = _sentReports.asStateFlow()
+
+    private val _lastSendOk = MutableStateFlow<Boolean?>(null)
+    /** Result of the most recent sendReport call; null = nothing sent yet. */
+    val lastSendOk: StateFlow<Boolean?> = _lastSendOk.asStateFlow()
+
+    /** Latest report; re-sent by the keepalive and used to answer GET_REPORT. */
+    @Volatile
+    private var lastReport: ByteArray = GamepadState.neutralReport()
+
     private var hid: BluetoothHidDevice? = null
     private var host: BluetoothDevice? = null
     private var started = false
@@ -53,6 +65,30 @@ class HidGamepad(context: Context) {
         val report = pending
         pending = null
         if (report != null) rawSend(report)
+    }
+
+    /**
+     * Keepalive: while connected, re-send the latest report every 100 ms.
+     * HID reports carry absolute state, so re-sending self-heals a change
+     * report the host missed (some Windows stacks are not yet listening on
+     * the interrupt channel right after the HID connection opens).
+     */
+    private val heartbeat = object : Runnable {
+        override fun run() {
+            if (_state.value is ConnState.Connected) {
+                rawSend(lastReport)
+                handler.postDelayed(this, HEARTBEAT_MS)
+            }
+        }
+    }
+
+    private fun startHeartbeat() {
+        handler.removeCallbacks(heartbeat)
+        handler.postDelayed(heartbeat, HEARTBEAT_MS)
+    }
+
+    private fun stopHeartbeat() {
+        handler.removeCallbacks(heartbeat)
     }
 
     fun isBluetoothSupported(): Boolean = adapter != null
@@ -167,15 +203,33 @@ class HidGamepad(context: Context) {
                     host = device
                     _state.value = ConnState.Connected(deviceLabel(device), device.address)
                     rawSend(GamepadState.neutralReport())
+                    startHeartbeat()
                 }
                 BluetoothProfile.STATE_CONNECTING -> {
                     _state.value = ConnState.Connecting(deviceLabel(device))
                 }
                 BluetoothProfile.STATE_DISCONNECTED -> {
+                    stopHeartbeat()
                     if (host?.address == device.address) host = null
                     if (_state.value is ConnState.Connected || _state.value is ConnState.Connecting) {
                         _state.value = ConnState.Registered
                     }
+                }
+            }
+        }
+
+        override fun onGetReport(device: BluetoothDevice, type: Byte, id: Byte, bufferSize: Int) {
+            // The host (Windows) may request the current state via GET_REPORT
+            // while setting the device up; reply with the latest input report.
+            if (type == BluetoothHidDevice.REPORT_TYPE_INPUT) {
+                try {
+                    hid?.replyReport(
+                        device, type,
+                        if (id.toInt() == 0) REPORT_ID.toByte() else id,
+                        lastReport
+                    )
+                } catch (e: Exception) {
+                    // best effort only
                 }
             }
         }
@@ -205,6 +259,7 @@ class HidGamepad(context: Context) {
 
     @SuppressLint("MissingPermission")
     fun disconnect() {
+        stopHeartbeat()
         rawSend(GamepadState.neutralReport())
         try {
             host?.let { hid?.disconnect(it) }
@@ -217,6 +272,7 @@ class HidGamepad(context: Context) {
 
     /** Queue a report. Sent immediately, coalesced to ~125/sec max. */
     fun send(report: ByteArray) {
+        lastReport = report
         if (_state.value !is ConnState.Connected) return
         val now = System.currentTimeMillis()
         val elapsed = now - lastSentAt
@@ -235,7 +291,8 @@ class HidGamepad(context: Context) {
     fun sendNeutral() {
         handler.removeCallbacks(flushPending)
         pending = null
-        if (_state.value is ConnState.Connected) rawSend(GamepadState.neutralReport())
+        lastReport = GamepadState.neutralReport()
+        if (_state.value is ConnState.Connected) rawSend(lastReport)
     }
 
     @SuppressLint("MissingPermission")
@@ -243,9 +300,14 @@ class HidGamepad(context: Context) {
         val device = hid ?: return
         val target = host ?: return
         try {
-            device.sendReport(target, REPORT_ID, report)
-            lastSentAt = System.currentTimeMillis()
+            val ok = device.sendReport(target, REPORT_ID, report)
+            _lastSendOk.value = ok
+            if (ok) {
+                _sentReports.value += 1
+                lastSentAt = System.currentTimeMillis()
+            }
         } catch (e: SecurityException) {
+            _lastSendOk.value = false
             _state.value = ConnState.Error("Bluetooth permission denied.")
         }
     }
@@ -254,6 +316,7 @@ class HidGamepad(context: Context) {
     @SuppressLint("MissingPermission")
     fun close() {
         closing = true
+        stopHeartbeat()
         sendNeutral()
         try {
             hid?.unregisterApp()
@@ -273,5 +336,6 @@ class HidGamepad(context: Context) {
     companion object {
         const val REPORT_ID = 1
         private const val MIN_INTERVAL_MS = 8L // ~125 reports/sec
+        private const val HEARTBEAT_MS = 100L
     }
 }

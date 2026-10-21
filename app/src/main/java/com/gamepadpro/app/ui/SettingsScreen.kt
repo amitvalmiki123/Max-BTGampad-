@@ -161,7 +161,7 @@ fun SettingsScreen(
             ) {
                 Text("About", color = PadColors.TextHi, fontWeight = FontWeight.Bold, fontSize = 15.sp)
                 Spacer(Modifier.height(4.dp))
-                Text("App Version 1.0.0", color = PadColors.TextMu, fontSize = 12.sp)
+                Text("App Version 1.0.1", color = PadColors.TextMu, fontSize = 12.sp)
                 Spacer(Modifier.height(8.dp))
                 Text(
                     "Jaankari (Limitations):\n" +

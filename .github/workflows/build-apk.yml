@@ -43,14 +43,14 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          cp app/build/outputs/apk/debug/app-debug.apk GamePadPro-v1.0.0.apk
-          if gh release view v1.0.0 >/dev/null 2>&1; then
-            gh release upload v1.0.0 GamePadPro-v1.0.0.apk --clobber
+          cp app/build/outputs/apk/debug/app-debug.apk GamePadPro-v1.0.1.apk
+          if gh release view v1.0.1 >/dev/null 2>&1; then
+            gh release upload v1.0.1 GamePadPro-v1.0.1.apk --clobber
           else
-            gh release create v1.0.0 GamePadPro-v1.0.0.apk \
+            gh release create v1.0.1 GamePadPro-v1.0.1.apk \
               --target "$GITHUB_SHA" \
-              --title "GamePad Pro v1.0.0 — Bluetooth HID Gamepad" \
-              --notes "Install **GamePadPro-v1.0.0.apk** on your Android phone (Android 9+), open the app, tap *Pair New Device*, and pair this phone from your PC / TV Bluetooth settings. Full instructions: README.md"
+              --title "GamePad Pro v1.0.1 — Bluetooth HID Gamepad" \
+              --notes "v1.0.1 fix: 100 ms report keepalive + answers Windows GET_REPORT + debug overlay now shows how many HID reports were sent. **Important if buttons did not respond:** remove/forget the old pairing on BOTH PC and phone, then pair again with the app open. Install **GamePadPro-v1.0.1.apk** (Android 9+). Full instructions: README.md"
           fi
 
       - name: Report build result as commit comment

@@ -29,6 +29,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -94,6 +95,8 @@ fun GamepadScreen(
     val selectedIdState = remember { mutableStateOf<String?>(null) }
     var menuOpen by remember { mutableStateOf(false) }
     var fullscreen by remember { mutableStateOf(true) }
+    val sentCount by hid.sentReports.collectAsState()
+    val sendOk by hid.lastSendOk.collectAsState()
     var reportHex by remember { mutableStateOf(GamepadState.neutralReport().toHex()) }
     var pressedLabel by remember { mutableStateOf("—") }
 
@@ -405,6 +408,15 @@ fun GamepadScreen(
                     color = PadColors.TextHi,
                     fontSize = 11.sp,
                     fontFamily = FontFamily.Monospace
+                )
+                Text(
+                    "HID sent: $sentCount" + when (sendOk) {
+                        true -> " (ok)"
+                        false -> " (FAIL — phone se report nahi ja raha)"
+                        null -> ""
+                    },
+                    color = if (sendOk == false) PadColors.Danger else PadColors.Ok,
+                    fontSize = 11.sp
                 )
             }
         }

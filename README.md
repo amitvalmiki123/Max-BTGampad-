@@ -82,6 +82,28 @@ Menu → **Edit layout** (ya Settings → Gamepad Layout → Edit):
   isiliye screen-on rakha gaya hai). App background me jaane par sab buttons auto-release ho jate
   hain (koi button “ataka” nahi rahega).
 
+## "Connected" dikh raha hai par buttons kaam nahi kar rahe?
+
+Ye sabse common problem hai, aur aksar cause **purana Bluetooth pairing cache** hota hai —
+agar phone PC se pehle (bina app ke) pair hua tha, toh Windows phone ko gamepad ki tarah
+register nahi karta. Step-by-step fix:
+
+1. **Pehle confirm karo report ja raha hai ya nahi:** app me Settings → *Debug Overlay* ON karo,
+   gamepad screen par koi button dabao. Neeche *Report:* ke bytes badalne chahiye aur
+   **"HID sent:" wala number badhta rehna chahiye** (v1.0.1+). Number badh raha hai matlab
+   phone theek se bhej raha hai — problem PC side par hai (agla step).
+2. **Purana pair dono taraf se hatao:** PC par Settings → Bluetooth & devices → apna phone →
+   **Remove device**. Phone par Settings → Bluetooth → apna PC → **Forget/Unpair**.
+3. **App khula rakh ke dobara pair karo:** app me status "Ready" ho, *Make Discoverable* dabao,
+   PC se pair karo, fir app ki list se **Connect** karo.
+4. **`joy.cpl` me sahi controller chuno:** hamara gamepad list me **phone ke Bluetooth naam** se
+   aayega. Agar list me koi aur controller dikhta hai (jaise *"Gamepad by momo5502"* — ye kisi
+   dusre PC software ka virtual controller hai), toh wo **hamara gamepad nahi hai**; us software
+   ko band kar do varna games usi khaali controller ko use karenge. Hamare pad ko select karke
+   **Properties → Test** me buttons check karo.
+5. **Device Manager check:** Device Manager → *Human Interface Devices* me
+   "HID-compliant game controller" banna chahiye. Nahi bana toh step 2–3 (re-pair) hi fix hai.
+
 ## Problem aaye toh (Troubleshooting)
 
 | Problem | Solution |
@@ -103,4 +125,4 @@ Menu → **Edit layout** (ya Settings → Gamepad Layout → Edit):
 - Reference files: `GamePadPro_Android_Build_Spec.md` (build spec), `gamepad-custom.html`
   (web layout prototype), `Neon Bluetooth Gamepad UI Concept.png` (design).
 
-App Version 1.0.0
+App Version 1.0.1
